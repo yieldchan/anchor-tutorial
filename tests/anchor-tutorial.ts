@@ -13,35 +13,45 @@ describe('anchor-tutorial', () => {
   anchor.setProvider(provider);
 
   const program = anchor.workspace.AnchorTutorial as Program<AnchorTutorial>;
-  const myAccount = anchor.web3.Keypair.generate()
+  const counter = anchor.web3.Keypair.generate()
 
-  it('Is initialized!', async () => {
-
-    const tx = await program.rpc.initialize(new anchor.BN(1234), {
+  it('creates a counter', async () => {
+    const tx = await program.rpc.create(provider.wallet.publicKey, {
       accounts: {
-        myAccount: myAccount.publicKey,
+        counter: counter.publicKey,
         user: provider.wallet.publicKey,
         systemProgram: SystemProgram.programId
       },
-      signers: [myAccount]
+      signers: [counter]
     })
 
     console.log("Your transaction signature", tx);
 
-    const account = await program.account.myAccount.fetch(myAccount.publicKey);
-    expect(account.data.eq(new anchor.BN(1234)))
-  });
+    const account = await program.account.counter.fetch(counter.publicKey);
 
-  it('account updated', async () => {
-    const tx = await program.rpc.update(new anchor.BN(6789), {
+    expect(account.authority.equals(provider.wallet.publicKey))
+    expect(account.count.toNumber()).to.equal(0)
+  })
+
+  it('increments a counter', async () => {
+    const tx = await program.rpc.increment({
       accounts: {
-        myAccount: myAccount.publicKey,
+        counter: counter.publicKey,
+        authority: provider.wallet.publicKey,
+      }
+    })
+    const tx2 = await program.rpc.increment({
+      accounts: {
+        counter: counter.publicKey,
+        authority: provider.wallet.publicKey,
       }
     })
 
     console.log(`Transaction sig ${tx}`)
+    console.log(`Transaction sig ${tx2}`)
 
-    const account = await program.account.myAccount.fetch(myAccount.publicKey)
-    expect(account.data.eq(new anchor.BN(6789)))
+    const account = await program.account.counter.fetch(counter.publicKey)
+    expect(account.authority.equals(provider.wallet.publicKey))
+    expect(account.count.toNumber()).to.equal(2)
   })
 });
