@@ -7,24 +7,21 @@ declare_id!("7JLSWQPXYAGxxwqsnYvSLuw4xmVBFjHwK1BU4iRNBLjK");
 pub mod anchor_tutorial {
     use super::*;
 
-    pub fn create(ctx: Context<Create>, authority: Pubkey) -> ProgramResult {
-        let counter = &mut ctx.accounts.counter;
-        counter.authority = authority;
-        counter.count = 0;
+    pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
         Ok(())
     }
 
-    pub fn increment(ctx: Context<Increment>) -> ProgramResult {
-        let counter = &mut ctx.accounts.counter;
-        counter.count += 1;
+    pub fn set_data(ctx: Context<SetData>, data: u64) -> ProgramResult {
+        let puppet = &mut ctx.accounts.puppet;
+        puppet.data = data;
         Ok(())
     }
 }
 
 #[derive(Accounts)]
-pub struct Create<'info> {
-    #[account(init, payer = user, space = 8 + 40)]
-    pub counter: Account<'info, Counter>,
+pub struct Initialize<'info> {
+    #[account(init, payer = user, space = 8 + 8)]
+    pub puppet: Account<'info, Data>,
 
     #[account(mut)]
     pub user: Signer<'info>,
@@ -32,14 +29,12 @@ pub struct Create<'info> {
 }
 
 #[derive(Accounts)]
-pub struct Increment<'info> {
-    #[account(mut, has_one = authority)]
-    pub counter: Account<'info, Counter>,
-    pub authority: Signer<'info>,
+pub struct SetData<'info> {
+    #[account(mut)]
+    pub puppet: Account<'info, Data>,
 }
 
 #[account]
-pub struct Counter {
-    pub authority: Pubkey,
-    pub count: u64,
+pub struct Data {
+    pub data: u64,
 }

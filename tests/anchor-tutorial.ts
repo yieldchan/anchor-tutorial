@@ -2,7 +2,8 @@ import * as anchor from '@project-serum/anchor';
 import { Program } from '@project-serum/anchor';
 import { expect } from 'chai'
 
-import { AnchorTutorial } from '../target/types/anchor_tutorial';
+import { AnchorTutorial } from '../target/types/anchor_tutorial'
+import { PuppetMaster } from '../target/types/puppet_master'
 
 const { SystemProgram } = anchor.web3
 
@@ -12,46 +13,33 @@ describe('anchor-tutorial', () => {
   // Configure the client to use the local cluster.
   anchor.setProvider(provider);
 
-  const program = anchor.workspace.AnchorTutorial as Program<AnchorTutorial>;
+  const program = anchor.workspace.AnchorTutorial as Program<AnchorTutorial>
+  const masterProgram = anchor.workspace.PuppetMaster as Program<PuppetMaster>
   const counter = anchor.web3.Keypair.generate()
 
-  it('creates a counter', async () => {
-    const tx = await program.rpc.create(provider.wallet.publicKey, {
+  it('performs CPI from master to anchor tutorial', async () => {
+
+    const newPuppetAccount = anchor.web3.Keypair.generate()
+
+    await program.rpc.initialize({
       accounts: {
-        counter: counter.publicKey,
+        puppet: newPuppetAccount.publicKey,
         user: provider.wallet.publicKey,
         systemProgram: SystemProgram.programId
       },
-      signers: [counter]
+      signers: [newPuppetAccount]
     })
 
-    console.log("Your transaction signature", tx);
-
-    const account = await program.account.counter.fetch(counter.publicKey);
-
-    expect(account.authority.equals(provider.wallet.publicKey))
-    expect(account.count.toNumber()).to.equal(0)
-  })
-
-  it('increments a counter', async () => {
-    const tx = await program.rpc.increment({
+    await masterProgram.rpc.pullStrings(new anchor.BN(1234), {
       accounts: {
-        counter: counter.publicKey,
-        authority: provider.wallet.publicKey,
-      }
-    })
-    const tx2 = await program.rpc.increment({
-      accounts: {
-        counter: counter.publicKey,
-        authority: provider.wallet.publicKey,
+        puppet: newPuppetAccount.publicKey,
+        anchorTutorialProgram: program.programId,
       }
     })
 
-    console.log(`Transaction sig ${tx}`)
-    console.log(`Transaction sig ${tx2}`)
+    const puppetAccount = await program.account.data.fetch(newPuppetAccount.publicKey)
 
-    const account = await program.account.counter.fetch(counter.publicKey)
-    expect(account.authority.equals(provider.wallet.publicKey))
-    expect(account.count.toNumber()).to.equal(2)
+    expect(puppetAccount.data.eq(new anchor.BN(1234)))
   })
+
 });
