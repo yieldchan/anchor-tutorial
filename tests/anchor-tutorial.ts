@@ -14,32 +14,15 @@ describe('anchor-tutorial', () => {
   anchor.setProvider(provider);
 
   const program = anchor.workspace.AnchorTutorial as Program<AnchorTutorial>
-  const masterProgram = anchor.workspace.PuppetMaster as Program<PuppetMaster>
-  const counter = anchor.web3.Keypair.generate()
 
-  it('performs CPI from master to anchor tutorial', async () => {
-
-    const newPuppetAccount = anchor.web3.Keypair.generate()
-
-    await program.rpc.initialize({
-      accounts: {
-        puppet: newPuppetAccount.publicKey,
-        user: provider.wallet.publicKey,
-        systemProgram: SystemProgram.programId
-      },
-      signers: [newPuppetAccount]
-    })
-
-    await masterProgram.rpc.pullStrings(new anchor.BN(1234), {
-      accounts: {
-        puppet: newPuppetAccount.publicKey,
-        anchorTutorialProgram: program.programId,
-      }
-    })
-
-    const puppetAccount = await program.account.data.fetch(newPuppetAccount.publicKey)
-
-    expect(puppetAccount.data.eq(new anchor.BN(1234)))
+  it('error message matches', async () => {
+    try {
+      const tx = await program.rpc.hello()
+      expect.fail('succeeded')
+    } catch (e) {
+      const errMsg = 'This is an error message clients will automatically display'
+      expect(e.toString()).to.equal(errMsg)
+    }
   })
 
 });

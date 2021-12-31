@@ -7,34 +7,16 @@ declare_id!("7JLSWQPXYAGxxwqsnYvSLuw4xmVBFjHwK1BU4iRNBLjK");
 pub mod anchor_tutorial {
     use super::*;
 
-    pub fn initialize(_ctx: Context<Initialize>) -> ProgramResult {
-        Ok(())
-    }
-
-    pub fn set_data(ctx: Context<SetData>, data: u64) -> ProgramResult {
-        let puppet = &mut ctx.accounts.puppet;
-        puppet.data = data;
-        Ok(())
+    pub fn hello(_ctx: Context<Hello>) -> ProgramResult {
+        Err(ErrorCode::Hello.into())
     }
 }
 
 #[derive(Accounts)]
-pub struct Initialize<'info> {
-    #[account(init, payer = user, space = 8 + 8)]
-    pub puppet: Account<'info, Data>,
+pub struct Hello {}
 
-    #[account(mut)]
-    pub user: Signer<'info>,
-    pub system_program: Program<'info, System>,
-}
-
-#[derive(Accounts)]
-pub struct SetData<'info> {
-    #[account(mut)]
-    pub puppet: Account<'info, Data>,
-}
-
-#[account]
-pub struct Data {
-    pub data: u64,
+#[error]
+pub enum ErrorCode {
+    #[msg("This is an error message clients will automatically display")]
+    Hello,
 }
